@@ -1,0 +1,1093 @@
+{% assign first_service_time_id = "" %}
+{% assign first_service_time_start = "" %}
+{% assign first_service_time_end = "" %}
+
+{% assign second_service_time_id = "" %}
+{% assign second_service_time_start = "" %}
+{% assign second_service_time_end = "" %}
+
+{% assign third_service_time_id = "" %}
+{% assign third_service_time_start = "" %}
+{% assign third_service_time_end = "" %}
+
+{% for service_time in plan.plan_times %}
+  {% if forloop.index == 1 %}
+    {% assign first_service_time_id = service_time.id %}
+    {% assign first_service_time_start = service_time.starts_at %}
+    {% assign first_service_time_end = service_time.ends_at %}
+  {% endif %}
+
+  {% if forloop.index == 2 %}
+    {% assign second_service_time_id = service_time.id %}
+    {% assign second_service_time_start = service_time.starts_at %}
+    {% assign second_service_time_end = service_time.ends_at %}
+  {% endif %}
+
+  {% if forloop.index == 3 %}
+    {% assign third_service_time_id = service_time.id %}
+    {% assign third_service_time_start = service_time.starts_at %}
+    {% assign third_service_time_end = service_time.ends_at %}
+  {% endif %}
+{% endfor %}
+
+<style>
+  @page {
+    size: letter portrait;
+    margin: 0.18in;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: #eceef0;
+    color: #1f2328;
+    font-family: "Helvetica Neue", Arial, "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 9.3px;
+    line-height: 1.38;
+  }
+
+  /* Container: no border of its own. Each column carries its own box so the
+     sheet can be cut down the middle into two closed half-sheets. */
+  .sheet {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  /* Each column is a fully closed box: dark accent on top, thin rule all four
+     sides. The two inner borders sit back-to-back at the center cut. */
+  .col {
+    display: table-cell;
+    width: 50%;
+    vertical-align: top;
+    background: #ffffff;
+    border: 1px solid #dde0e4;
+    border-top: 3px solid #3a3f45;
+  }
+
+  /* Inner (cut-side) edge gets wider padding to match the @page outer margin
+     so each half looks balanced after cutting. Left column's inner edge is its
+     RIGHT side. */
+  .col-left {
+    padding: 10px 30px 10px 14px;
+  }
+
+  /* Right column's inner edge is its LEFT side. */
+  .col-right {
+    padding: 10px 14px 10px 30px;
+  }
+
+  .masthead {
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1.5px solid #8f959b;
+  }
+
+  .masthead-kicker {
+    margin-bottom: 3px;
+    color: #b0202c;
+    font-size: 7.3px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .masthead-title {
+    color: #14181c;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+  }
+
+  .masthead-meta {
+    margin-top: 4px;
+    color: #565b61;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  .masthead-meta .meta-time {
+    font-weight: 700;
+    color: #1f2328;
+  }
+
+  .flow {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  .flow thead th {
+    padding: 3px 4px;
+    border-bottom: 1.5px solid #8f959b;
+    color: #565b61;
+    text-align: left;
+    font-size: 7px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    vertical-align: middle;
+  }
+
+  .flow tbody td {
+    padding: 4.5px 4px;
+    border-bottom: 1px solid #d9dde1;
+    vertical-align: top;
+  }
+
+  .flow tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Column order: Time -> Item/Description -> Dur. -> CG3 */
+  .col-time {
+    width: 16%;
+    color: #1f2328;
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: normal;
+    word-break: break-word;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .col-item {
+    width: 54%;
+  }
+
+  .col-dur {
+    width: 10%;
+    text-align: right;
+    color: #1f2328;
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .col-cg3 {
+    width: 20%;
+    font-size: 8.2px;
+    line-height: 1.3;
+    color: #5a3e00;
+  }
+
+  /* Duration header right-aligns too (overrides the left-aligned thead rule) */
+  .flow thead th.col-dur {
+    text-align: right;
+  }
+
+  /* CG3 header cell: explicit yellow/gold, not transparent */
+  thead th.col-cg3 {
+    background: #a07800;
+    color: #fff8e0;
+    border-bottom: 1.5px solid #c9a030;
+    letter-spacing: 0.15em;
+    vertical-align: middle;
+  }
+
+  /* CG3 column data cells */
+  tbody td.col-cg3 {
+    background: #fffbe6;
+    border-left: 2px solid #e0b020;
+    padding-left: 5px;
+  }
+
+  /* CG3 column on section header rows stays neutral */
+  .section-row td.col-cg3 {
+    background: #edeff1;
+    border-left: 2px solid #e0b020;
+  }
+
+  td.col-time {
+    padding-right: 6px;
+  }
+
+  td.col-dur {
+    padding-right: 6px;
+  }
+
+  .flow-right .col-time {
+    width: 16%;
+  }
+
+  .flow-right .col-item {
+    width: 54%;
+  }
+
+  .flow-right .col-dur {
+    width: 10%;
+  }
+
+  .flow-right .col-cg3 {
+    width: 20%;
+  }
+
+  .flow-right tbody .col-time {
+    font-size: 9px;
+    white-space: normal;
+  }
+
+  .flow-right thead .col-time,
+  .flow thead .col-time {
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  /* Keeps an individual time (or a time glued to its slash) from breaking
+     internally. The only legal break is the plain space after the slash. */
+  .nowrap {
+    white-space: nowrap;
+  }
+
+  .section-row td {
+    padding: 5.5px 7px;
+    background: #edeff1;
+    border-top: 1.5px solid #8f959b;
+    border-bottom: 1px solid #c2c7cc;
+  }
+
+  .section-title {
+    color: #14181c;
+    font-size: 9.7px;
+    font-weight: 800;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .section-dur {
+    color: #b0202c;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .item-name {
+    color: #14181c;
+    font-size: 9.7px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .item-desc {
+    margin-top: 1px;
+    color: #4a4f55;
+    font-size: 8.7px;
+    line-height: 1.3;
+  }
+
+  .item-note {
+    margin-top: 1px;
+    color: #767b81;
+    font-size: 8.4px;
+    line-height: 1.28;
+  }
+
+  .song-row td.col-item {
+    padding-left: 4px;
+  }
+
+  .song-row .item-name {
+    font-weight: 700;
+  }
+
+  .song-muted {
+    color: #9aa0a6;
+  }
+
+  .pre .item-name,
+  .post .item-name {
+    color: #565b61;
+    font-weight: 600;
+  }
+
+  .pre .col-time,
+  .post .col-time {
+    color: #767b81;
+    font-weight: 600;
+  }
+
+  .pre .col-dur,
+  .post .col-dur {
+    color: #767b81;
+    font-weight: 600;
+  }
+
+  .total {
+    display: table;
+    width: 100%;
+    margin-top: 10px;
+    padding: 6px 2px 0 2px;
+    border-top: 2px solid #8f959b;
+  }
+
+  .total-label {
+    display: table-cell;
+    vertical-align: middle;
+    color: #565b61;
+    font-size: 7.3px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .total-value {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+    color: #b0202c;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .summary {
+    margin-top: 10px;
+    padding: 7px 9px;
+    background: #f5f6f7;
+    border: 1px solid #c2c7cc;
+    border-left: 3px solid #8f959b;
+  }
+
+  .summary-line {
+    color: #14181c;
+    font-size: 8.2px;
+    font-weight: 800;
+    line-height: 1.35;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary-line + .summary-line {
+    margin-top: 3px;
+  }
+
+  .summary-label {
+    color: #3a3f45;
+  }
+
+  .summary-times {
+    color: #14181c;
+  }
+
+  .summary-times .sep {
+    color: #14181c;
+    font-weight: 700;
+    padding: 0 4px;
+  }
+
+  .summary-word {
+    color: #14181c;
+    font-weight: 700;
+  }
+
+  .colophon {
+    margin-top: 7px;
+    padding: 5px 3px 0 3px;
+    border-top: 1px solid #c2c7cc;
+    color: #767b81;
+    font-size: 7.3px;
+    line-height: 1.25;
+  }
+
+  @media print {
+    body {
+      background: #ffffff;
+      font-size: 9.3px;
+    }
+
+    tr,
+    td,
+    th {
+      page-break-inside: avoid;
+    }
+
+    .section-row {
+      page-break-after: avoid;
+    }
+
+    .col {
+      page-break-inside: avoid;
+    }
+  }
+</style>
+
+<div class="sheet">
+
+  <section class="col col-left">
+    <header class="masthead">
+      <div class="masthead-kicker">
+        1st Service
+      </div>
+
+      <div class="masthead-title">
+        {{ plan.dates | escape }}
+      </div>
+
+      <div class="masthead-meta">
+        {% if first_service_time_start %}
+          <span class="meta-time">{{ first_service_time_start | date: "%-I:%M %p" }}</span>
+        {% endif %}
+
+        {% if plan.name %}
+          {{ plan.name | escape }}
+        {% endif %}
+      </div>
+    </header>
+
+    {% assign left_total_seconds = 0 %}
+
+    {% if plan.items.size > 0 %}
+      <table class="flow">
+        <thead>
+          <tr>
+            <th class="col-time">Time</th>
+            <th class="col-item">Item / Description</th>
+            <th class="col-dur">Dur.</th>
+            <th class="col-cg3">CG3</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% assign current_section_is_worship = false %}
+          {% assign worship_row_printed = false %}
+
+          {% for item in plan.items %}
+            {% if item.item_type == "Header" %}
+              {% assign header_title_upcase = item.title | upcase %}
+
+              {% if header_title_upcase contains "WORSHIP" %}
+                {% assign current_section_is_worship = true %}
+                {% assign worship_row_printed = false %}
+              {% else %}
+                {% assign current_section_is_worship = false %}
+              {% endif %}
+
+              {% assign header_total_seconds = 0 %}
+              {% assign inside_this_header = false %}
+
+              {% for scan_item in plan.items %}
+                {% if scan_item.id == item.id %}
+                  {% assign inside_this_header = true %}
+                {% elsif inside_this_header and scan_item.item_type == "Header" %}
+                  {% assign inside_this_header = false %}
+                {% elsif inside_this_header %}
+                  {% assign show_scan_item = false %}
+
+                  {% for scan_item_time in scan_item.times %}
+                    {% if scan_item_time.time_id == first_service_time_id %}
+                      {% unless scan_item_time.excluded? %}
+                        {% assign show_scan_item = true %}
+                      {% endunless %}
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if show_scan_item %}
+                    {% assign raw_scan_length = scan_item.length | default: scan_item.clean_length %}
+
+                    {% if raw_scan_length %}
+                      {% assign scan_length_parts = raw_scan_length | split: ":" %}
+
+                      {% if scan_length_parts.size > 1 %}
+                        {% assign scan_minutes = scan_length_parts | first | plus: 0 %}
+                        {% assign scan_seconds = scan_length_parts | last | plus: 0 %}
+                        {% assign scan_total_seconds = scan_minutes | times: 60 | plus: scan_seconds %}
+                      {% else %}
+                        {% assign scan_minutes = raw_scan_length | plus: 0 %}
+                        {% assign scan_total_seconds = scan_minutes | times: 60 %}
+                      {% endif %}
+
+                      {% assign header_total_seconds = header_total_seconds | plus: scan_total_seconds %}
+                    {% endif %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+
+              {% assign header_total_minutes = header_total_seconds | divided_by: 60 %}
+              {% assign header_total_minutes_in_seconds = header_total_minutes | times: 60 %}
+              {% assign header_remaining_seconds = header_total_seconds | minus: header_total_minutes_in_seconds %}
+
+              <tr class="section-row">
+                <td colspan="2">
+                  <span class="section-title">{{ item.title | escape }}</span>{% unless header_title_upcase contains "PRE-SERVICE" %}{% unless header_title_upcase contains "PRESERVICE" %}{% unless header_title_upcase contains "PRE SERVICE" %}{% if header_total_seconds > 0 %} <span class="section-dur">({% if header_remaining_seconds == 0 %}{{ header_total_minutes }}&rsquo;{% else %}{{ header_total_minutes }}&rsquo;{% if header_remaining_seconds < 10 %}0{% endif %}{{ header_remaining_seconds }}&rdquo;{% endif %})</span>{% endif %}{% endunless %}{% endunless %}{% endunless %}
+                </td>
+                <td class="col-dur"></td>
+                <td class="col-cg3"></td>
+              </tr>
+
+            {% else %}
+              {% assign first_item_time = "" %}
+              {% assign show_left_item = false %}
+
+              {% for item_time in item.times %}
+                {% if item_time.time_id == first_service_time_id %}
+                  {% unless item_time.excluded? %}
+                    {% assign first_item_time = item_time %}
+                    {% assign show_left_item = true %}
+                  {% endunless %}
+                {% endif %}
+              {% endfor %}
+
+              {% if show_left_item %}
+
+                {% unless item.is_preservice %}
+                  {% unless item.is_postservice %}
+                    {% assign raw_length_for_total = item.length | default: item.clean_length %}
+                    {% if raw_length_for_total %}
+                      {% assign total_length_parts = raw_length_for_total | split: ":" %}
+
+                      {% if total_length_parts.size > 1 %}
+                        {% assign total_item_minutes = total_length_parts | first | plus: 0 %}
+                        {% assign total_item_seconds = total_length_parts | last | plus: 0 %}
+                        {% assign total_item_seconds_all = total_item_minutes | times: 60 | plus: total_item_seconds %}
+                      {% else %}
+                        {% assign total_item_minutes = raw_length_for_total | plus: 0 %}
+                        {% assign total_item_seconds_all = total_item_minutes | times: 60 %}
+                      {% endif %}
+
+                      {% assign left_total_seconds = left_total_seconds | plus: total_item_seconds_all %}
+                    {% endif %}
+                  {% endunless %}
+                {% endunless %}
+
+                {% assign item_cg3_note = "" %}
+                {% for item_note in item.notes %}
+                  {% assign cg3_cat_upcase = item_note.category_name | upcase %}
+                  {% if cg3_cat_upcase == "CG3" %}
+                    {% assign item_cg3_note = item_note.note %}
+                  {% endif %}
+                {% endfor %}
+
+                {% if current_section_is_worship %}
+                  <tr class="song-row">
+                    <td class="col-time">
+                      {% unless worship_row_printed %}
+                        {% if first_item_time.actual_time %}
+                          {% assign first_time_seconds = first_item_time.actual_time | date: "%S" | plus: 0 %}
+                          {% if first_time_seconds > 0 %}
+                            <span class="nowrap">{{ first_item_time.actual_time | date: "%-I:%M:%S %p" }}</span>
+                          {% else %}
+                            <span class="nowrap">{{ first_item_time.actual_time | date: "%-I:%M %p" }}</span>
+                          {% endif %}
+                        {% else %}
+                          &mdash;
+                        {% endif %}
+                      {% endunless %}
+                    </td>
+
+                    <td class="col-item">
+                      <div class="item-name">
+                        {{ item.title | upcase | escape }}
+                      </div>
+
+                      {% if item.description %}
+                        <div class="item-desc">
+                          {{ item.description }}
+                        </div>
+                      {% endif %}
+
+                      {% if item.detail %}
+                        <div class="item-note">
+                          {{ item.detail }}
+                        </div>
+                      {% endif %}
+                    </td>
+
+                    <td class="col-dur song-muted"></td>
+
+                    <td class="col-cg3">
+                      {{ item_cg3_note }}
+                    </td>
+                  </tr>
+
+                  {% assign worship_row_printed = true %}
+                {% else %}
+                  <tr class="{% if item.is_preservice %}pre{% endif %}{% if item.is_postservice %} post{% endif %}">
+                    <td class="col-time">
+                      {% if first_item_time.actual_time %}
+                        {% assign first_time_seconds = first_item_time.actual_time | date: "%S" | plus: 0 %}
+                        {% if first_time_seconds > 0 %}
+                          <span class="nowrap">{{ first_item_time.actual_time | date: "%-I:%M:%S %p" }}</span>
+                        {% else %}
+                          <span class="nowrap">{{ first_item_time.actual_time | date: "%-I:%M %p" }}</span>
+                        {% endif %}
+                      {% else %}
+                        &mdash;
+                      {% endif %}
+                    </td>
+
+                    <td class="col-item">
+                      <div class="item-name">
+                        {{ item.title | escape }}
+                      </div>
+
+                      {% if item.description %}
+                        <div class="item-desc">
+                          {{ item.description }}
+                        </div>
+                      {% endif %}
+
+                      {% if item.detail %}
+                        <div class="item-note">
+                          {{ item.detail }}
+                        </div>
+                      {% endif %}
+                    </td>
+
+                    <td class="col-dur">
+                      {% assign raw_length = item.length | default: item.clean_length %}
+
+                      {% if raw_length %}
+                        {% assign length_parts = raw_length | split: ":" %}
+
+                        {% if length_parts.size > 1 %}
+                          {% assign minutes = length_parts | first | plus: 0 %}
+                          {% assign seconds = length_parts | last | plus: 0 %}
+
+                          {% if minutes == 0 and seconds == 0 %}
+                          {% elsif seconds == 0 %}
+                            {{ minutes }}&rsquo;
+                          {% else %}
+                            {{ minutes }}&rsquo;{{ length_parts | last }}&rdquo;
+                          {% endif %}
+                        {% else %}
+                          {% assign minutes = raw_length | plus: 0 %}
+
+                          {% if minutes == 0 %}
+                          {% else %}
+                            {{ minutes }}&rsquo;
+                          {% endif %}
+                        {% endif %}
+                      {% else %}
+                        &mdash;
+                      {% endif %}
+                    </td>
+
+                    <td class="col-cg3">
+                      {{ item_cg3_note }}
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    {% assign left_total_minutes = left_total_seconds | divided_by: 60 %}
+    {% assign left_total_minutes_in_seconds = left_total_minutes | times: 60 %}
+    {% assign left_total_remaining_seconds = left_total_seconds | minus: left_total_minutes_in_seconds %}
+
+    {% if left_total_remaining_seconds > 0 %}
+      {% assign left_total_minutes = left_total_minutes | plus: 1 %}
+    {% endif %}
+
+    <div class="total">
+      <div class="total-label">Total Service Time</div>
+      <div class="total-value">{{ left_total_minutes }} min</div>
+    </div>
+
+    <div class="summary">
+      <div class="summary-line">
+        <span class="summary-label">1st Service</span>
+        <span class="summary-times">
+          &middot;
+          <span class="summary-word">Start:</span>
+          {% if first_service_time_start %}
+            <span class="nowrap">{{ first_service_time_start | date: "%-I:%M %p" }}</span>
+          {% else %}
+            &mdash;
+          {% endif %}
+          <span class="sep">/</span>
+          <span class="summary-word">End:</span>
+          {% if first_service_time_end %}
+            <span class="nowrap">{{ first_service_time_end | date: "%-I:%M %p" }}</span>
+          {% else %}
+            &mdash;
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="col col-right">
+    <header class="masthead">
+      <div class="masthead-kicker">
+        2nd / 3rd Service
+      </div>
+
+      <div class="masthead-title">
+        {{ plan.dates | escape }}
+      </div>
+
+      <div class="masthead-meta">
+        {% if second_service_time_start %}
+          <span class="meta-time">{{ second_service_time_start | date: "%-I:%M %p" }}</span>
+        {% endif %}
+
+        {% if second_service_time_start and third_service_time_start %}
+          <span class="meta-time">/</span>
+        {% endif %}
+
+        {% if third_service_time_start %}
+          <span class="meta-time">{{ third_service_time_start | date: "%-I:%M %p" }}</span>
+        {% endif %}
+
+        {% if plan.name %}
+          {{ plan.name | escape }}
+        {% endif %}
+      </div>
+    </header>
+
+    {% assign right_total_seconds = 0 %}
+
+    {% if plan.items.size > 0 %}
+      <table class="flow flow-right">
+        <thead>
+          <tr>
+            <th class="col-time">Time</th>
+            <th class="col-item">Item / Description</th>
+            <th class="col-dur">Dur.</th>
+            <th class="col-cg3">CG3</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% assign current_section_is_worship = false %}
+          {% assign worship_row_printed = false %}
+
+          {% for item in plan.items %}
+            {% if item.item_type == "Header" %}
+              {% assign header_title_upcase = item.title | upcase %}
+
+              {% if header_title_upcase contains "WORSHIP" %}
+                {% assign current_section_is_worship = true %}
+                {% assign worship_row_printed = false %}
+              {% else %}
+                {% assign current_section_is_worship = false %}
+              {% endif %}
+
+              {% assign header_total_seconds = 0 %}
+              {% assign inside_this_header = false %}
+
+              {% for scan_item in plan.items %}
+                {% if scan_item.id == item.id %}
+                  {% assign inside_this_header = true %}
+                {% elsif inside_this_header and scan_item.item_type == "Header" %}
+                  {% assign inside_this_header = false %}
+                {% elsif inside_this_header %}
+                  {% assign show_scan_item = false %}
+
+                  {% for scan_item_time in scan_item.times %}
+                    {% if scan_item_time.time_id == second_service_time_id %}
+                      {% unless scan_item_time.excluded? %}
+                        {% assign show_scan_item = true %}
+                      {% endunless %}
+                    {% endif %}
+
+                    {% if scan_item_time.time_id == third_service_time_id %}
+                      {% unless scan_item_time.excluded? %}
+                        {% assign show_scan_item = true %}
+                      {% endunless %}
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if show_scan_item %}
+                    {% assign raw_scan_length = scan_item.length | default: scan_item.clean_length %}
+
+                    {% if raw_scan_length %}
+                      {% assign scan_length_parts = raw_scan_length | split: ":" %}
+
+                      {% if scan_length_parts.size > 1 %}
+                        {% assign scan_minutes = scan_length_parts | first | plus: 0 %}
+                        {% assign scan_seconds = scan_length_parts | last | plus: 0 %}
+                        {% assign scan_total_seconds = scan_minutes | times: 60 | plus: scan_seconds %}
+                      {% else %}
+                        {% assign scan_minutes = raw_scan_length | plus: 0 %}
+                        {% assign scan_total_seconds = scan_minutes | times: 60 %}
+                      {% endif %}
+
+                      {% assign header_total_seconds = header_total_seconds | plus: scan_total_seconds %}
+                    {% endif %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+
+              {% assign header_total_minutes = header_total_seconds | divided_by: 60 %}
+              {% assign header_total_minutes_in_seconds = header_total_minutes | times: 60 %}
+              {% assign header_remaining_seconds = header_total_seconds | minus: header_total_minutes_in_seconds %}
+
+              <tr class="section-row">
+                <td colspan="2">
+                  <span class="section-title">{{ item.title | escape }}</span>{% unless header_title_upcase contains "PRE-SERVICE" %}{% unless header_title_upcase contains "PRESERVICE" %}{% unless header_title_upcase contains "PRE SERVICE" %}{% if header_total_seconds > 0 %} <span class="section-dur">({% if header_remaining_seconds == 0 %}{{ header_total_minutes }}&rsquo;{% else %}{{ header_total_minutes }}&rsquo;{% if header_remaining_seconds < 10 %}0{% endif %}{{ header_remaining_seconds }}&rdquo;{% endif %})</span>{% endif %}{% endunless %}{% endunless %}{% endunless %}
+                </td>
+                <td class="col-dur"></td>
+                <td class="col-cg3"></td>
+              </tr>
+
+            {% else %}
+              {% assign second_item_time = "" %}
+              {% assign third_item_time = "" %}
+              {% assign show_right_item = false %}
+
+              {% for item_time in item.times %}
+                {% if item_time.time_id == second_service_time_id %}
+                  {% unless item_time.excluded? %}
+                    {% assign second_item_time = item_time %}
+                    {% assign show_right_item = true %}
+                  {% endunless %}
+                {% endif %}
+
+                {% if item_time.time_id == third_service_time_id %}
+                  {% unless item_time.excluded? %}
+                    {% assign third_item_time = item_time %}
+                    {% assign show_right_item = true %}
+                  {% endunless %}
+                {% endif %}
+              {% endfor %}
+
+              {% if show_right_item %}
+
+                {% unless item.is_preservice %}
+                  {% unless item.is_postservice %}
+                    {% assign raw_length_for_total = item.length | default: item.clean_length %}
+                    {% if raw_length_for_total %}
+                      {% assign total_length_parts = raw_length_for_total | split: ":" %}
+
+                      {% if total_length_parts.size > 1 %}
+                        {% assign total_item_minutes = total_length_parts | first | plus: 0 %}
+                        {% assign total_item_seconds = total_length_parts | last | plus: 0 %}
+                        {% assign total_item_seconds_all = total_item_minutes | times: 60 | plus: total_item_seconds %}
+                      {% else %}
+                        {% assign total_item_minutes = raw_length_for_total | plus: 0 %}
+                        {% assign total_item_seconds_all = total_item_minutes | times: 60 %}
+                      {% endif %}
+
+                      {% assign right_total_seconds = right_total_seconds | plus: total_item_seconds_all %}
+                    {% endif %}
+                  {% endunless %}
+                {% endunless %}
+
+                {% assign item_cg3_note = "" %}
+                {% for item_note in item.notes %}
+                  {% assign cg3_cat_upcase = item_note.category_name | upcase %}
+                  {% if cg3_cat_upcase == "CG3" %}
+                    {% assign item_cg3_note = item_note.note %}
+                  {% endif %}
+                {% endfor %}
+
+                {% if current_section_is_worship %}
+                  <tr class="song-row">
+                    <td class="col-time">
+                      {% unless worship_row_printed %}
+                        {% if second_item_time.actual_time %}
+                          {% assign second_time_seconds = second_item_time.actual_time | date: "%S" | plus: 0 %}
+                          {% if second_time_seconds > 0 %}
+                            <span class="nowrap">{{ second_item_time.actual_time | date: "%-I:%M:%S %p" }}&nbsp;<span class="song-muted">/</span></span>
+                          {% else %}
+                            <span class="nowrap">{{ second_item_time.actual_time | date: "%-I:%M %p" }}&nbsp;<span class="song-muted">/</span></span>
+                          {% endif %}
+                        {% else %}
+                          <span class="nowrap">&mdash;&nbsp;<span class="song-muted">/</span></span>
+                        {% endif %}
+
+                        <span class="nowrap">
+                          {% if third_item_time.actual_time %}
+                            {% assign third_time_seconds = third_item_time.actual_time | date: "%S" | plus: 0 %}
+                            {% if third_time_seconds > 0 %}
+                              {{ third_item_time.actual_time | date: "%-I:%M:%S %p" }}
+                            {% else %}
+                              {{ third_item_time.actual_time | date: "%-I:%M %p" }}
+                            {% endif %}
+                          {% else %}
+                            &mdash;
+                          {% endif %}
+                        </span>
+                      {% endunless %}
+                    </td>
+
+                    <td class="col-item">
+                      <div class="item-name">
+                        {{ item.title | upcase | escape }}
+                      </div>
+
+                      {% if item.description %}
+                        <div class="item-desc">
+                          {{ item.description }}
+                        </div>
+                      {% endif %}
+
+                      {% if item.detail %}
+                        <div class="item-note">
+                          {{ item.detail }}
+                        </div>
+                      {% endif %}
+                    </td>
+
+                    <td class="col-dur song-muted"></td>
+
+                    <td class="col-cg3">
+                      {{ item_cg3_note }}
+                    </td>
+                  </tr>
+
+                  {% assign worship_row_printed = true %}
+                {% else %}
+                  <tr class="{% if item.is_preservice %}pre{% endif %}{% if item.is_postservice %} post{% endif %}">
+                    <td class="col-time">
+                      {% if second_item_time.actual_time %}
+                        {% assign second_time_seconds = second_item_time.actual_time | date: "%S" | plus: 0 %}
+                        {% if second_time_seconds > 0 %}
+                          <span class="nowrap">{{ second_item_time.actual_time | date: "%-I:%M:%S %p" }}&nbsp;<span class="song-muted">/</span></span>
+                        {% else %}
+                          <span class="nowrap">{{ second_item_time.actual_time | date: "%-I:%M %p" }}&nbsp;<span class="song-muted">/</span></span>
+                        {% endif %}
+                      {% else %}
+                        <span class="nowrap">&mdash;&nbsp;<span class="song-muted">/</span></span>
+                      {% endif %}
+
+                      <span class="nowrap">
+                        {% if third_item_time.actual_time %}
+                          {% assign third_time_seconds = third_item_time.actual_time | date: "%S" | plus: 0 %}
+                          {% if third_time_seconds > 0 %}
+                            {{ third_item_time.actual_time | date: "%-I:%M:%S %p" }}
+                          {% else %}
+                            {{ third_item_time.actual_time | date: "%-I:%M %p" }}
+                          {% endif %}
+                        {% else %}
+                          &mdash;
+                        {% endif %}
+                      </span>
+                    </td>
+
+                    <td class="col-item">
+                      <div class="item-name">
+                        {{ item.title | escape }}
+                      </div>
+
+                      {% if item.description %}
+                        <div class="item-desc">
+                          {{ item.description }}
+                        </div>
+                      {% endif %}
+
+                      {% if item.detail %}
+                        <div class="item-note">
+                          {{ item.detail }}
+                        </div>
+                      {% endif %}
+                    </td>
+
+                    <td class="col-dur">
+                      {% assign raw_length = item.length | default: item.clean_length %}
+
+                      {% if raw_length %}
+                        {% assign length_parts = raw_length | split: ":" %}
+
+                        {% if length_parts.size > 1 %}
+                          {% assign minutes = length_parts | first | plus: 0 %}
+                          {% assign seconds = length_parts | last | plus: 0 %}
+
+                          {% if minutes == 0 and seconds == 0 %}
+                          {% elsif seconds == 0 %}
+                            {{ minutes }}&rsquo;
+                          {% else %}
+                            {{ minutes }}&rsquo;{{ length_parts | last }}&rdquo;
+                          {% endif %}
+                        {% else %}
+                          {% assign minutes = raw_length | plus: 0 %}
+
+                          {% if minutes == 0 %}
+                          {% else %}
+                            {{ minutes }}&rsquo;
+                          {% endif %}
+                        {% endif %}
+                      {% else %}
+                        &mdash;
+                      {% endif %}
+                    </td>
+
+                    <td class="col-cg3">
+                      {{ item_cg3_note }}
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    {% assign right_total_minutes = right_total_seconds | divided_by: 60 %}
+    {% assign right_total_minutes_in_seconds = right_total_minutes | times: 60 %}
+    {% assign right_total_remaining_seconds = right_total_seconds | minus: right_total_minutes_in_seconds %}
+
+    {% if right_total_remaining_seconds > 0 %}
+      {% assign right_total_minutes = right_total_minutes | plus: 1 %}
+    {% endif %}
+
+    <div class="total">
+      <div class="total-label">Total Service Time</div>
+      <div class="total-value">{{ right_total_minutes }} min</div>
+    </div>
+
+    <div class="summary">
+      <div class="summary-line">
+        <span class="summary-label">2nd Service</span>
+        <span class="summary-times">
+          &middot;
+          <span class="summary-word">Start:</span>
+          {% if second_service_time_start %}
+            <span class="nowrap">{{ second_service_time_start | date: "%-I:%M %p" }}</span>
+          {% else %}
+            &mdash;
+          {% endif %}
+          <span class="sep">/</span>
+          <span class="summary-word">End:</span>
+          {% if second_service_time_end %}
+            <span class="nowrap">{{ second_service_time_end | date: "%-I:%M %p" }}</span>
+          {% else %}
+            &mdash;
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="summary-line">
+        <span class="summary-label">3rd Service</span>
+        <span class="summary-times">
+          &middot;
+          <span class="summary-word">Start:</span>
+          {% if third_service_time_start %}
+            <span class="nowrap">{{ third_service_time_start | date: "%-I:%M %p" }}</span>
+          {% else %}
+            &mdash;
+          {% endif %}
+          <span class="sep">/</span>
+          <span class="summary-word">End:</span>
+          {% if third_service_time_end %}
+            <span class="nowrap">{{ third_service_time_end | date: "%-I:%M %p" }}</span>
+          {% else %}
+            &mdash;
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="colophon">
+  {{ organization.name | escape }}
+  &middot; Printed {{ now | date: "%b %-d, %Y %-I:%M %p" }}
+</footer>
