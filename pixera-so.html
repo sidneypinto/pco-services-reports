@@ -90,18 +90,25 @@
     border-bottom: 1.5px solid #8f959b;
   }
 
+  .masthead-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+
   .masthead-kicker {
-    margin-bottom: 3px;
     color: #b0202c;
     font-size: 7.3px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.16em;
+    white-space: nowrap;
   }
 
   .masthead-title {
     color: #14181c;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
     line-height: 1.02;
     letter-spacing: -0.02em;
@@ -164,7 +171,7 @@
 
   td.col-time {
     color: #1f2328;
-    font-size: 9.5px;
+    font-size: 8.5px;
     font-weight: 700;
     line-height: 1.25;
     white-space: normal;
@@ -443,9 +450,10 @@
 <div class="sheet">
 
   <header class="masthead">
-    <div class="masthead-kicker">1st Service</div>
-
-    <div class="masthead-title">{{ plan.dates | escape }}</div>
+    <div class="masthead-top">
+      <div class="masthead-title">{{ plan.dates | escape }}</div>
+      <div class="masthead-kicker">1st Service</div>
+    </div>
 
     <div class="masthead-meta">
       {% if first_service_time_start %}
@@ -799,9 +807,10 @@
 <div class="sheet">
 
   <header class="masthead">
-    <div class="masthead-kicker">2nd / 3rd Service</div>
-
-    <div class="masthead-title">{{ plan.dates | escape }}</div>
+    <div class="masthead-top">
+      <div class="masthead-title">{{ plan.dates | escape }}</div>
+      <div class="masthead-kicker">2nd / 3rd Service</div>
+    </div>
 
     <div class="masthead-meta">
       {% if second_service_time_start %}
